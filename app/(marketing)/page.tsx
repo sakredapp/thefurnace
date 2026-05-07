@@ -530,7 +530,7 @@ export default function Home() {
 
         {/* ── 6. DARK BAND — Pricing ── */}
         <section className="landing-band-dark">
-          <SectionLabel kicker="Pricing Model" heading="Four Layers. Designed to Scale With You." dark />
+          <SectionLabel kicker="Pricing Model" heading="Three Layers. Designed to Scale With You." dark />
           <p style={{
             textAlign: "center",
             fontSize: "0.95rem",
@@ -539,7 +539,7 @@ export default function Home() {
             maxWidth: 580,
             margin: "0 auto 2rem",
           }}>
-            Every engagement is built from the same four layers. You get a clear view of what you're paying for and what each piece is doing.
+            Every engagement is built from the same three layers. You get a clear view of what you're paying for and what each piece is doing.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 720, margin: "0 auto" }}>
             <PricingLayerCard
@@ -562,13 +562,6 @@ export default function Home() {
               title="Spend Management"
               body="Ongoing campaign oversight scaled to your ad spend — budget pacing, audience management, negative keyword maintenance, and experiment decisions."
               tag="% of spend"
-            />
-            <PricingLayerCard
-              step="04"
-              label="Optional"
-              title="Performance Kicker"
-              body="An incentive layer tied to qualified appointments set or closed-won revenue — available for accounts with offline conversion tracking fully in place."
-              tag="Performance"
             />
           </div>
           <div style={{ textAlign: "center", marginTop: "2.5rem" }}>
