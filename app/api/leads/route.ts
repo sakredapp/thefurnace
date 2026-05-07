@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Service-role client — this is an inbound webhook, no user session
-const supabase = createClient(
+const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert lead into Supabase
-  const { data: lead, error } = await supabase
+  const { data: lead, error } = await db()
     .from("leads")
     .insert({
       client_id: clientId,
@@ -51,13 +50,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Forward to Virtual Closer and/or GHL if configured for this client
-  const { data: client } = await supabase
+  const { data: client } = await db()
     .from("clients")
     .select("id, business_name, crm_type")
     .eq("id", clientId)
     .single();
 
-  const { data: integrations } = await supabase
+  const { data: integrations } = await db()
     .from("integrations")
     .select("type, account_id, status")
     .eq("client_id", clientId)

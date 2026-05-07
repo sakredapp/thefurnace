@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateCopyVariants } from "@/lib/ai";
 
-const supabase = createClient(
+const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "client_id and platform required" }, { status: 400 });
   }
 
-  const { data: client } = await supabase
+  const { data: client } = await db()
     .from("clients")
     .select("business_name, vertical, offer_description, target_geography")
     .eq("id", client_id)
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch existing approved copy to differentiate from
-  const { data: existingCreatives } = await supabase
+  const { data: existingCreatives } = await db()
     .from("creatives")
     .select("headline, body")
     .eq("client_id", client_id)
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   );
 
   // Log the run start
-  const { data: run } = await supabase
+  const { data: run } = await db()
     .from("ai_runs")
     .insert({
       client_id,
@@ -87,14 +87,14 @@ export async function POST(req: NextRequest) {
       ai_notes: `Angle: ${v.angle}. Reasoning: ${result.reasoning}`,
     }));
 
-    const { data: creatives } = await supabase
+    const { data: creatives } = await db()
       .from("creatives")
       .insert(creativeRows)
       .select();
 
     // Update run as completed
     after(async () => {
-      await supabase
+      await db()
         .from("ai_runs")
         .update({
           status: "completed",
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ variants: result.variants, creatives });
   } catch (err) {
-    await supabase
+    await db()
       .from("ai_runs")
       .update({ status: "failed", error: String(err) })
       .eq("id", run?.id);

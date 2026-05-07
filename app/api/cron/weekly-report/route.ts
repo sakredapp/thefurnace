@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { analyzeCampaignPerformance, generateWeeklyReport } from "@/lib/ai";
 
-const supabase = createClient(
+const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const endStr = periodEnd.toISOString().split("T")[0];
   const period = `${startStr} to ${endStr}`;
 
-  const { data: clients } = await supabase
+  const { data: clients } = await db()
     .from("clients")
     .select("id, business_name, vertical, offer_description")
     .eq("status", "active");
@@ -55,7 +55,7 @@ async function processClientReport(
   period: string
 ) {
   // Aggregate daily_metrics for the period
-  const { data: metrics } = await supabase
+  const { data: metrics } = await db()
     .from("daily_metrics")
     .select("platform, spend, impressions, clicks, leads_count, qualified_count, booked_count, closed_count")
     .eq("client_id", client.id)
@@ -63,7 +63,7 @@ async function processClientReport(
     .lte("date", endStr);
 
   // Lead status breakdown
-  const { data: leads } = await supabase
+  const { data: leads } = await db()
     .from("leads")
     .select("status")
     .eq("client_id", client.id)
@@ -120,7 +120,7 @@ async function processClientReport(
   };
 
   // Log run start
-  const { data: runRecord } = await supabase
+  const { data: runRecord } = await db()
     .from("ai_runs")
     .insert({
       client_id: client.id,
@@ -149,7 +149,7 @@ async function processClientReport(
       }),
     ]);
 
-    await supabase
+    await db()
       .from("ai_runs")
       .update({
         status: "completed",
@@ -158,7 +158,7 @@ async function processClientReport(
       })
       .eq("id", runRecord!.id);
   } catch (err) {
-    await supabase
+    await db()
       .from("ai_runs")
       .update({
         status: "failed",

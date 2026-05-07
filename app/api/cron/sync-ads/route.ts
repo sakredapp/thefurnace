@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { syncGoogleAdsCampaignMetrics, type GoogleAdsMetadata } from "@/lib/google-ads";
 import { syncMetaAdsCampaignMetrics, type MetaAdsMetadata } from "@/lib/meta-ads";
 
-const supabase = createClient(
+const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const dateRange = { start: dateStr, end: dateStr };
 
   // All active clients
-  const { data: clients, error: clientsError } = await supabase
+  const { data: clients, error: clientsError } = await db()
     .from("clients")
     .select("id, business_name")
     .eq("status", "active");
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch all connected ad integrations in one query
   const clientIds = clients.map((c) => c.id);
-  const { data: integrations } = await supabase
+  const { data: integrations } = await db()
     .from("integrations")
     .select("client_id, type, metadata")
     .in("client_id", clientIds)
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
     .map((r) => String(r.reason));
 
   // Log run
-  await supabase.from("ai_runs").insert({
+  await db().from("ai_runs").insert({
     client_id: null,
     run_type: "analysis",
     status: errors === 0 ? "completed" : "failed",

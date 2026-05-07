@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { uploadGoogleEnhancedConversion, type GoogleAdsMetadata } from "@/lib/google-ads";
 
-const supabase = createClient(
+const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   if (furnaceStatus === "closed_won") statusTimestamps.closed_at = now;
   if (furnaceStatus === "contacted" && !statusTimestamps.qualified_at) statusTimestamps.qualified_at = now;
 
-  const { data: lead, error } = await supabase
+  const { data: lead, error } = await db()
     .from("leads")
     .update({
       vc_disposition: disposition,
@@ -147,7 +147,7 @@ async function fireGoogleEnhancedConversion(lead: Record<string, unknown>, dispo
   if (!process.env.GOOGLE_ADS_DEVELOPER_TOKEN) return;
 
   const clientId = lead.client_id as string;
-  const { data: integration } = await supabase
+  const { data: integration } = await db()
     .from("integrations")
     .select("metadata")
     .eq("client_id", clientId)
@@ -192,7 +192,7 @@ async function updateDailyMetrics(clientId: string, disposition: string) {
   // Atomic increment per column via SQL function
   await Promise.allSettled(
     Object.entries(increment).map(([col, val]) =>
-      supabase.rpc("increment_daily_metric", {
+      db().rpc("increment_daily_metric", {
         p_client_id: clientId,
         p_date: today,
         p_platform: "total",
