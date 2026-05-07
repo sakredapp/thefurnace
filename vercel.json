@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/sync-ads", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/weekly-report", "schedule": "0 8 * * 1" }
+  ]
+}
