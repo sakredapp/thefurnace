@@ -156,7 +156,7 @@ export default async function IntegrationsPage({
       )}
 
       {activeStep === "virtual_closer" && (
-        <IntegrationCard title="Connect Virtual Closer" status={connected["gohighlevel"]?.status}>
+        <IntegrationCard title="Connect Virtual Closer" status={connected["virtual_closer"]?.status}>
           <div style={{ background: "rgba(244,81,30,0.06)", border: "1px solid rgba(244,81,30,0.2)", borderRadius: 10, padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontSize: "0.82rem", color: T.accent, fontWeight: 700, marginBottom: "0.3rem" }}>AI Nurture Layer</div>
             <div style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
@@ -167,23 +167,16 @@ export default async function IntegrationsPage({
             "Your Virtual Closer account will be provisioned by our team",
             "You'll receive an email with your VC dashboard login",
             "We'll configure your AI SDR with your offer, objection handling, and calendar",
-            "Lead routing from Furnace to VC is automatic once activated",
-            "VC will push booked appointments and qualified lead events back to Furnace for attribution",
+            "Paste the Rep ID assigned to this client below — leads will route to that rep automatically",
+            "VC will push booked appointments and disposition updates back to Furnace for attribution",
           ]} />
-          <div style={{ marginTop: "1.5rem" }}>
-            <form action={saveIntegration}>
-              <input type="hidden" name="client_id" value={id} />
-              <input type="hidden" name="type" value="gohighlevel" />
-              <input type="hidden" name="account_id" value="vc_provisioned" />
-              <input type="hidden" name="account_label" value="Virtual Closer" />
-              <button type="submit" style={{
-                background: T.accent, color: "#fff", border: "none", borderRadius: 8,
-                padding: "0.7rem 1.5rem", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit",
-              }}>
-                Mark VC as Active
-              </button>
-            </form>
-          </div>
+          <ConnectForm
+            clientId={id}
+            type="virtual_closer"
+            label="VC Rep ID"
+            placeholder="rep_abc123"
+            existing={connected["virtual_closer"]}
+          />
         </IntegrationCard>
       )}
 

@@ -39,7 +39,7 @@ const CONVERSION_DISPOSITIONS = new Set([
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-webhook-secret");
-  if (secret !== process.env.LEADS_WEBHOOK_SECRET) {
+  if (secret !== process.env.VC_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -64,13 +64,18 @@ export async function POST(req: NextRequest) {
 
   const forwardPromises: Promise<unknown>[] = [];
 
-  // Forward to Virtual Closer webhook if configured
-  const vcWebhookUrl = process.env.VIRTUAL_CLOSER_WEBHOOK_URL;
-  if (vcWebhookUrl) {
+  // Forward to Virtual Closer — use per-client repId stored in integration account_id
+  const vcIntegration = integrations?.find((i) => i.type === "virtual_closer");
+  const vcRepId = vcIntegration?.account_id;
+  const vcSecret = process.env.VC_FURNACE_SECRET;
+  if (vcRepId && vcSecret) {
     forwardPromises.push(
-      fetch(vcWebhookUrl, {
+      fetch(`https://virtualcloser.com/api/webhooks/furnace/${vcRepId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-furnace-secret": vcSecret,
+        },
         body: JSON.stringify({
           furnace_lead_id: lead.id,
           client_id: clientId,
@@ -80,7 +85,6 @@ export async function POST(req: NextRequest) {
           phone: lead.phone,
           source: lead.source,
           campaign_id: lead.campaign_id,
-          raw: body,
         }),
       }).catch((e) => console.error("VC forward failed:", e))
     );
