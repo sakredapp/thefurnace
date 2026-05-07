@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateCopyVariants } from "@/lib/ai";
+import { generateAdImage } from "@/lib/image-gen";
+import { buildAdCreative } from "@/lib/placid";
 
 const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,7 +76,17 @@ export async function POST(req: NextRequest) {
       performanceNotes: performance_notes,
     });
 
-    // Store each variant as a creative record
+    // Generate one image per variant in parallel (non-blocking — images attach after response)
+    const imagePromises = result.variants.map((v) =>
+      generateAdImage({
+        vertical: client.vertical ?? "other",
+        platform,
+        offerDescription: client.offer_description ?? "",
+        angle: v.angle,
+      })
+    );
+
+    // Insert copy rows immediately — image_url filled in after generation
     const creativeRows = result.variants.map((v) => ({
       client_id,
       type: "copy",
@@ -92,15 +104,36 @@ export async function POST(req: NextRequest) {
       .insert(creativeRows)
       .select();
 
-    // Update run as completed
+    // After response: generate images → composite with Placid → attach URLs
     after(async () => {
+      const backgroundUrls = await Promise.all(imagePromises);
+
+      if (creatives) {
+        await Promise.allSettled(
+          creatives.map(async (c, i) => {
+            const bgUrl = backgroundUrls[i] ?? null;
+
+            // Try Placid compositing first (copy + background → polished ad)
+            const placidUrl = await buildAdCreative({
+              platform,
+              headline: c.headline ?? "",
+              body: c.body ?? "",
+              cta: c.cta ?? "",
+              backgroundImageUrl: bgUrl,
+            });
+
+            // Use Placid output if available, otherwise fall back to raw fal.ai background
+            const finalUrl = placidUrl ?? bgUrl;
+            if (finalUrl) {
+              await db().from("creatives").update({ image_url: finalUrl }).eq("id", c.id);
+            }
+          })
+        );
+      }
+
       await db()
         .from("ai_runs")
-        .update({
-          status: "completed",
-          output: result,
-          completed_at: new Date().toISOString(),
-        })
+        .update({ status: "completed", output: result, completed_at: new Date().toISOString() })
         .eq("id", run?.id);
     });
 

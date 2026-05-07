@@ -100,6 +100,17 @@ export default async function CreativesPage() {
                   </div>
                 </div>
 
+                {/* Generated image */}
+                {c.image_url && (
+                  <div style={{ borderRadius: 8, overflow: "hidden", background: "rgba(0,0,0,0.3)", aspectRatio: c.platform === "meta_ads" ? "1/1" : "16/9", position: "relative" }}>
+                    <img
+                      src={c.image_url}
+                      alt={c.headline ?? "Ad creative"}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  </div>
+                )}
+
                 {/* Copy */}
                 {c.headline && (
                   <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>
