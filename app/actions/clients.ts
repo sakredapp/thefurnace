@@ -4,13 +4,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const DEFAULT_STEPS = [
-  { step_key: "google_ads", step_label: "Connect Google Ads", step_order: 1 },
-  { step_key: "meta_ads", step_label: "Connect Meta Ads", step_order: 2 },
-  { step_key: "crm", step_label: "Connect CRM", step_order: 3 },
-  { step_key: "offer", step_label: "Define Your Offer", step_order: 4 },
-  { step_key: "geo_budget", step_label: "Set Geography & Budget", step_order: 5 },
-  { step_key: "tracking", step_label: "Install Conversion Tracking", step_order: 6 },
-  { step_key: "launch", step_label: "Review & Launch", step_order: 7 },
+  { step_key: "profile",         step_label: "Complete client profile",        step_order: 1 },
+  { step_key: "client_invite",   step_label: "Invite client to portal",         step_order: 2 },
+  { step_key: "google_ads",      step_label: "Connect Google Ads",              step_order: 3 },
+  { step_key: "meta_ads",        step_label: "Connect Meta Ads",                step_order: 4 },
+  { step_key: "virtual_closer",  step_label: "Connect Virtual Closer (VC Rep)", step_order: 5 },
+  { step_key: "crm",             step_label: "Connect GoHighLevel (optional)",  step_order: 6 },
+  { step_key: "tracking",        step_label: "Connect Google Analytics",        step_order: 7 },
+  { step_key: "webhook_test",    step_label: "Send a test lead through webhook",step_order: 8 },
+  { step_key: "copy_gen",        step_label: "Generate first AI ad copy",       step_order: 9 },
+  { step_key: "launch",          step_label: "Campaigns live — mark active",    step_order: 10 },
 ];
 
 export async function createClient_(formData: FormData) {
@@ -38,9 +41,18 @@ export async function createClient_(formData: FormData) {
 
   if (error) redirect("/admin/clients/new?error=1");
 
-  // Seed default onboarding steps
+  const now = new Date().toISOString();
+  const hasOffer = !!(formData.get("offer_description") as string)?.trim();
+  const hasGeo = !!(formData.get("target_geography") as string)?.trim();
+
   await supabase.from("onboarding_steps").insert(
-    DEFAULT_STEPS.map((s) => ({ ...s, client_id: client.id }))
+    DEFAULT_STEPS.map((s) => ({
+      ...s,
+      client_id: client.id,
+      // Auto-complete step 1 since we just created the profile
+      completed: s.step_key === "profile" && hasOffer && hasGeo,
+      completed_at: s.step_key === "profile" && hasOffer && hasGeo ? now : null,
+    }))
   );
 
   redirect(`/admin/clients/${client.id}`);
