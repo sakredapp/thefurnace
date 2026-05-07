@@ -143,15 +143,33 @@ export default async function IntegrationsPage({
 
       {activeStep === "gohighlevel" && (
         <IntegrationCard title="Connect GoHighLevel" status={connected["gohighlevel"]?.status}>
+          {connected["gohighlevel"]?.metadata?.webhook_id ? (
+            <div style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", borderRadius: 10, padding: "0.9rem 1.25rem", marginBottom: "1.5rem", fontSize: "0.85rem", color: "#86efac" }}>
+              Webhook auto-registered in GHL — opportunity stage changes will sync automatically.
+            </div>
+          ) : connected["gohighlevel"]?.status === "connected" ? (
+            <div style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 10, padding: "0.9rem 1.25rem", marginBottom: "1.5rem", fontSize: "0.85rem", color: "#fcd34d" }}>
+              Auto-registration failed or not attempted. Manually add this webhook URL in GHL → Settings → Webhooks, and select "Opportunity Stage Update":<br />
+              <code style={{ fontSize: "0.78rem", color: "#fff", display: "block", marginTop: "0.4rem" }}>{leadsWebhookUrl.replace("/api/leads", "/api/crm/ghl")}</code>
+            </div>
+          ) : null}
           <Instructions steps={[
             "In GHL, go to Settings → Integrations → API Keys",
-            'Click "Create API Key" — give it the name "Furnace"',
-            "Copy the API key and paste it below",
-            "Also copy your GHL Location ID (Settings → Business Info → Location ID)",
-            `Finally, go to Settings → Webhooks → Add Webhook URL: ${leadsWebhookUrl}`,
-            "Select: Contact Created, Contact Updated, Opportunity Stage Change",
+            'Click "Create API Key" — name it "Furnace", copy the key',
+            "Go to Settings → Business Info → copy your Location ID",
+            "Paste both below and save — Furnace will auto-register the webhook for you",
+            "If auto-registration fails (some GHL plans require agency access), you'll see a URL to add manually",
           ]} />
-          <ConnectForm clientId={id} type="gohighlevel" label="GHL Location ID" placeholder="abc123xyz" existing={connected["gohighlevel"]} />
+          <ConnectForm
+            clientId={id}
+            type="gohighlevel"
+            label="GHL Location ID"
+            placeholder="abc123xyz"
+            existing={connected["gohighlevel"]}
+            extraFields={[
+              { name: "api_key", label: "GHL API Key", placeholder: "eyJhbGci...", sensitive: true },
+            ]}
+          />
         </IntegrationCard>
       )}
 

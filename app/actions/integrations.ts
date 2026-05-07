@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { registerGHLWebhook, type GHLMetadata } from "@/lib/gohighlevel";
 
 export async function saveIntegration(formData: FormData) {
   const supabase = await createClient();
@@ -29,7 +30,19 @@ export async function saveIntegration(formData: FormData) {
     .eq("type", type)
     .single();
 
-  const mergedMetadata = { ...(existing?.metadata ?? {}), ...metadata };
+  let mergedMetadata = { ...(existing?.metadata ?? {}), ...metadata };
+
+  // Auto-register GHL webhook when GHL integration is first connected
+  if (type === "gohighlevel" && mergedMetadata.api_key && mergedMetadata.location_id && !mergedMetadata.webhook_id) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.furnaceleads.com";
+    const result = await registerGHLWebhook(
+      mergedMetadata as unknown as GHLMetadata,
+      `${siteUrl}/api/crm/ghl`
+    );
+    if (result?.webhook_id) {
+      mergedMetadata = { ...mergedMetadata, webhook_id: result.webhook_id };
+    }
+  }
 
   await supabase
     .from("integrations")
@@ -55,6 +68,7 @@ export async function saveIntegration(formData: FormData) {
     hubspot: "crm",
     salesforce: "crm",
     google_analytics: "tracking",
+    virtual_closer: "virtual_closer",
   };
 
   const stepKey = stepKeyMap[type];

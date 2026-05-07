@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createGHLContact, type GHLMetadata } from "@/lib/gohighlevel";
 
 const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -90,24 +91,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Forward to GHL if client has it connected
+  // Forward to GHL via API — creates contact with furnace tracking tag
   const ghlIntegration = integrations?.find((i) => i.type === "gohighlevel");
-  const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL;
-  if (ghlIntegration && ghlWebhookUrl) {
-    forwardPromises.push(
-      fetch(ghlWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+  if (ghlIntegration) {
+    const { data: ghlIntFull } = await db()
+      .from("integrations")
+      .select("metadata")
+      .eq("client_id", clientId)
+      .eq("type", "gohighlevel")
+      .single();
+
+    const ghlMeta = ghlIntFull?.metadata as GHLMetadata | undefined;
+    if (ghlMeta?.api_key && ghlMeta?.location_id) {
+      forwardPromises.push(
+        createGHLContact(ghlMeta, {
           furnace_lead_id: lead.id,
           full_name: lead.full_name,
           email: lead.email,
           phone: lead.phone,
           source: lead.source,
-          tags: ["furnace", lead.source ?? "unknown"],
-        }),
-      }).catch((e) => console.error("GHL forward failed:", e))
-    );
+        }).catch((e) => console.error("GHL contact create failed:", e))
+      );
+    }
   }
 
   // Forward after response is sent — don't block the webhook caller

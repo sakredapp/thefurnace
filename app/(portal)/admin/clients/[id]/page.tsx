@@ -24,7 +24,7 @@ const STEP_META: Record<string, { desc: string; action?: (id: string) => { label
     action: (id) => ({ label: "Connect Virtual Closer →", href: `/admin/clients/${id}/integrations?step=virtual_closer` }),
   },
   crm: {
-    desc: "Optional. If client uses GoHighLevel: get Location ID and API key, then add the Furnace webhook URL to their GHL webhooks.",
+    desc: "Optional. If client uses GoHighLevel: get their Location ID + API key and save. Furnace will auto-register the webhook — no manual GHL workflow setup needed.",
     action: (id) => ({ label: "Connect GHL →", href: `/admin/clients/${id}/integrations?step=gohighlevel` }),
   },
   tracking: {
