@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 };
 
 export default function TermsOfService() {
-  const updated = "May 6, 2025";
+  const updated = "May 6, 2026";
   const email = "hello@furnaceleads.com";
   const company = "Furnace Leads";
 
@@ -57,6 +57,9 @@ export default function TermsOfService() {
           </p>
           <p>
             The specific scope, volume, pricing, and delivery schedule for your Services are defined in your order confirmation, service agreement, or campaign brief. In the event of a conflict between these Terms and a separate written agreement, the written agreement controls.
+          </p>
+          <p>
+            <strong>Agreement required before purchase.</strong> You must affirmatively agree to these Terms of Service — including the refund, cancellation, and billing policies in Sections 3–5 — before completing any purchase. By checking the agreement checkbox at checkout and submitting payment, you confirm that you have read, understood, and agreed to these Terms. Purchases cannot be completed without this affirmative acknowledgment. This record of consent may be used as evidence in the event of a payment dispute or chargeback.
           </p>
 
           <hr />
@@ -136,6 +139,11 @@ export default function TermsOfService() {
           <h3>4.4 Exceptional Circumstances</h3>
           <p>
             We may, at our sole discretion, offer credits or refunds in exceptional circumstances (e.g., documented technical failure on our part). All refund requests must be submitted to <a href={`mailto:${email}`}>{email}</a> within 30 days of the charge.
+          </p>
+
+          <h3>4.5 Chargebacks and Disputes</h3>
+          <p>
+            Before initiating a chargeback or payment dispute with your card issuer or bank, you agree to contact us at <a href={`mailto:${email}`}>{email}</a> to resolve the issue directly. Your affirmative agreement to these Terms at the time of purchase — including this refund policy — is recorded and may be submitted as evidence to the payment network in the event of a dispute. Initiating a chargeback without first contacting us may result in suspension of your account and recovery of any amounts improperly reversed.
           </p>
 
           <hr />

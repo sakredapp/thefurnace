@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicy() {
-  const updated = "May 6, 2025";
+  const updated = "May 6, 2026";
   const email = "hello@furnaceleads.com";
   const company = "Furnace Leads";
   const site = "furnaceleads.com";
@@ -63,7 +63,10 @@ export default function PrivacyPolicy() {
             We use <strong>Stripe, Inc.</strong> to process all payments. When you purchase a service or subscription, your payment card details (card number, expiration date, CVV) are entered directly into Stripe&apos;s secure interface and transmitted to Stripe. We do not store, transmit, or have access to your full payment card information. We receive only a tokenized reference and limited summary data (last four digits, card brand, expiration month/year) from Stripe for billing and record-keeping purposes.
           </p>
           <p>
-            Stripe&apos;s privacy practices are described in the <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>. Stripe is certified as a PCI DSS Level 1 Service Provider.
+            <strong>Stripe&apos;s independent data collection:</strong> Stripe may independently collect personal information about you — including device identifiers, IP address, browser type, and behavioral data — via cookies and similar technologies when you interact with payment interfaces on our site. Stripe uses this data to operate and improve its services, including for fraud detection, loss prevention, authentication, and analytics. This collection is governed solely by the <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>. Stripe is certified as a PCI DSS Level 1 Service Provider.
+          </p>
+          <p>
+            By using our services, you acknowledge that we have obtained, on Stripe&apos;s behalf, all necessary rights and consents required for Stripe to lawfully collect, use, and process your personal information as described in the Stripe Privacy Policy.
           </p>
 
           <h3>Information Collected Automatically</h3>
@@ -152,6 +155,7 @@ export default function PrivacyPolicy() {
           <p>We use the following categories of cookies:</p>
           <ul>
             <li><strong>Strictly necessary</strong> — required for the site to function (e.g., session authentication). These cannot be disabled.</li>
+            <li><strong>Stripe payment cookies</strong> — Stripe sets cookies including <code>__stripe_mid</code> and <code>__stripe_sid</code> independently on pages where payment functionality is present. These are strictly necessary for fraud detection and secure payment processing and cannot be disabled without removing payment functionality. They are governed by the <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>.</li>
             <li><strong>Analytics</strong> — help us understand how visitors use the site (e.g., page views, traffic sources). You may opt out via your browser settings or a cookie consent tool.</li>
             <li><strong>Marketing</strong> — used to track conversions from ad campaigns. Only set with your consent.</li>
           </ul>

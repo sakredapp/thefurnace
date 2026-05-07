@@ -155,7 +155,21 @@ function IntegrationCard({
         gap: "1rem",
       }}
     >
-      <span style={{ fontSize: "2rem", flexShrink: 0, lineHeight: 1 }}>{icon}</span>
+      <span style={{
+        flexShrink: 0,
+        width: "2.6rem",
+        height: "2.6rem",
+        borderRadius: 8,
+        background: "rgba(244,81,30,0.18)",
+        border: "1px solid rgba(244,81,30,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "0.62rem",
+        fontWeight: 800,
+        letterSpacing: "0.04em",
+        color: T.accent,
+      }}>{icon}</span>
       <div>
         <h3 style={{
           fontSize: "1.05rem",
@@ -311,7 +325,7 @@ export default function Home() {
           </p>
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
             <a href="mailto:hello@furnaceleads.com" className="btn-primary">Book a Consultation</a>
-            <a href="mailto:hello@furnaceleads.com" className="btn-secondary">Request Lead Samples</a>
+            <a href="/request-samples" className="btn-secondary">Request Lead Samples</a>
           </div>
         </section>
 
@@ -388,8 +402,8 @@ export default function Home() {
               <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.22em", textTransform: "uppercase", color: T.muted2, marginBottom: "1rem" }}>
                 Without Furnace Leads
               </div>
-              <div style={{ fontSize: "2.4rem", fontWeight: 900, letterSpacing: "-0.02em", color: T.ink, lineHeight: 1 }}>$180+</div>
-              <div style={{ fontSize: "0.92rem", color: T.muted, margin: "0.4rem 0 1.25rem" }}>average cost per shared, unverified lead</div>
+              <div style={{ fontSize: "2.4rem", fontWeight: 900, letterSpacing: "-0.02em", color: T.ink, lineHeight: 1 }}>$18+</div>
+              <div style={{ fontSize: "0.92rem", color: T.muted, margin: "0.4rem 0 1.25rem" }}>average cost per unverified, shared lead elsewhere</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {[
                   "Shared leads sold to 3–5 competitors",
@@ -417,8 +431,8 @@ export default function Home() {
               <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.22em", textTransform: "uppercase", color: T.accent, marginBottom: "1rem" }}>
                 With Furnace Leads
               </div>
-              <div style={{ fontSize: "2.4rem", fontWeight: 900, letterSpacing: "-0.02em", color: T.ink, lineHeight: 1 }}>Exclusive</div>
-              <div style={{ fontSize: "0.92rem", color: T.muted, margin: "0.4rem 0 1.25rem" }}>verified leads delivered only to your team</div>
+              <div style={{ fontSize: "2.4rem", fontWeight: 900, letterSpacing: "-0.02em", color: T.ink, lineHeight: 1 }}>Under $10</div>
+              <div style={{ fontSize: "0.92rem", color: T.muted, margin: "0.4rem 0 1.25rem" }}>exclusive, verified leads delivered only to your team</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {[
                   "Exclusive, intent-verified leads",
@@ -440,10 +454,10 @@ export default function Home() {
         <section className="landing-band-dark">
           <SectionLabel kicker="Integrations" heading="Works With the Tools Your Team Already Uses" dark />
           <div className="feature-grid" style={{ marginTop: "2rem" }}>
-            <IntegrationCard dark icon="🔗" name="HubSpot CRM" description="Direct webhook and native integration — leads flow in and get assigned automatically with no manual import." />
-            <IntegrationCard dark icon="⚡" name="GoHighLevel" description="Built for agencies already running GHL. Leads drop into your pipeline with custom tags and workflow triggers." />
-            <IntegrationCard dark icon="☁️" name="Salesforce" description="Enterprise-grade CRM sync with field mapping, lead scoring, and opportunity auto-creation out of the box." />
-            <IntegrationCard dark icon="🔄" name="Zapier / Make" description="Connect to any tool in your stack via Zapier or Make — no engineering required, no ongoing maintenance." />
+            <IntegrationCard dark icon="HS" name="HubSpot CRM" description="Direct webhook and native integration — leads flow in and get assigned automatically with no manual import." />
+            <IntegrationCard dark icon="GHL" name="GoHighLevel" description="Built for agencies already running GHL. Leads drop into your pipeline with custom tags and workflow triggers." />
+            <IntegrationCard dark icon="SF" name="Salesforce" description="Enterprise-grade CRM sync with field mapping, lead scoring, and opportunity auto-creation out of the box." />
+            <IntegrationCard dark icon="ZAP" name="Zapier / Make" description="Connect to any tool in your stack via Zapier or Make — no engineering required, no ongoing maintenance." />
           </div>
         </section>
 
