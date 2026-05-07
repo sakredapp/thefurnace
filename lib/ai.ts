@@ -1,9 +1,10 @@
 import { generateText, Output } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 
-// Routes through Vercel AI Gateway — uses OIDC (VERCEL_OIDC_TOKEN) or AI_GATEWAY_API_KEY
-const FAST_MODEL = "anthropic/claude-haiku-4.5";
-const SMART_MODEL = "anthropic/claude-sonnet-4.6";
+const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const FAST_MODEL  = anthropic("claude-haiku-4-5-20251001");
+const SMART_MODEL = anthropic("claude-sonnet-4-6");
 
 // ─── Copy generation ─────────────────────────────────────────────────────────
 
@@ -147,4 +148,3 @@ Write a clear report. The clientSummary should be plain English — no jargon, j
   return output!;
 }
 
-export { FAST_MODEL, SMART_MODEL };
