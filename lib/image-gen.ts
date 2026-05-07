@@ -43,11 +43,9 @@ export async function generateAdImage(input: {
       input: {
         prompt,
         image_size: imageSize,
-        num_inference_steps: 25,
-        guidance_scale: 3.5,
         num_images: 1,
         safety_tolerance: "2",
-      },
+      } as never,
     });
 
     const images = (result.data as { images?: { url: string }[] })?.images;
