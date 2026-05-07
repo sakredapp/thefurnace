@@ -19,8 +19,9 @@ export async function login(formData: FormData) {
     .eq("id", data.user.id)
     .single();
 
-  if (profile?.role === "admin") redirect("/admin");
-  redirect("/dashboard");
+  // Default to /admin — only explicit "client" role goes to /dashboard
+  if (profile?.role === "client") redirect("/dashboard");
+  redirect("/admin");
 }
 
 export async function logout() {

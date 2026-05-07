@@ -19,7 +19,7 @@ export default async function ClientLayout({ children }: { children: React.React
     .eq("user_id", user.id)
     .single();
 
-  if (!client) redirect("/login");
+  if (!client) redirect("/admin");
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: T.bg }}>

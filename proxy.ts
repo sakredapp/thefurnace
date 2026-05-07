@@ -43,7 +43,8 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    const dest = profile?.role === "admin" ? "/admin" : "/dashboard";
+    // Default to /admin — only explicit "client" role goes to /dashboard
+    const dest = profile?.role === "client" ? "/dashboard" : "/admin";
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
