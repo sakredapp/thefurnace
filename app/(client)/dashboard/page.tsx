@@ -93,7 +93,7 @@ export default async function ClientDashboard() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     .toISOString().split("T")[0];
 
-  const [metricsRes, creativesRes, recentLeadsRes, totalLeadsRes] = await Promise.all([
+  const [metricsRes, creativesRes, recentLeadsRes, totalLeadsRes, reportsRes] = await Promise.all([
     supabase
       .from("daily_metrics")
       .select("spend,impressions,clicks,leads_count,contacted_count,qualified_count,booked_count,closed_count,disqualified_count,no_answer_count,voicemail_count")
@@ -115,6 +115,14 @@ export default async function ClientDashboard() {
       .from("leads")
       .select("status", { count: "exact" })
       .eq("client_id", client.id),
+    supabase
+      .from("ai_runs")
+      .select("id, input_summary, output, created_at")
+      .eq("client_id", client.id)
+      .eq("run_type", "report")
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(4),
   ]);
 
   const rows: DailyRow[] = (metricsRes.data ?? []) as DailyRow[];
@@ -145,6 +153,12 @@ export default async function ClientDashboard() {
   const activeCreativesCount = creativesRes.count ?? 0;
   const recentLeads: Lead[] = (recentLeadsRes.data ?? []) as Lead[];
   const totalLeadsCount = totalLeadsRes.count ?? 0;
+  const reports = (reportsRes.data ?? []) as Array<{
+    id: string;
+    input_summary: string;
+    output: { report?: { headline?: string; clientSummary?: string; highlights?: string[]; concerns?: string[]; nextWeekPlan?: string[] } } | null;
+    created_at: string;
+  }>;
 
   const isOnboarding = client.status === "onboarding";
 
@@ -288,6 +302,66 @@ export default async function ClientDashboard() {
           )}
         </div>
       </div>
+
+      {/* Weekly reports */}
+      {reports.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: "1rem" }}>
+            Weekly Reports
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {reports.map((run) => {
+              const r = run.output?.report;
+              if (!r) return null;
+              const period = run.input_summary?.replace("weekly_report ", "") ?? "";
+              return (
+                <div key={run.id} style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  borderRadius: 12, padding: "1.5rem",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                    <div>
+                      <div style={{ fontSize: "1rem", fontWeight: 800, color: "#fff", lineHeight: 1.3 }}>{r.headline}</div>
+                      <div style={{ fontSize: "0.72rem", color: T.muted, marginTop: "0.25rem" }}>{period}</div>
+                    </div>
+                    <div style={{ fontSize: "0.7rem", color: T.muted, flexShrink: 0 }}>
+                      {new Date(run.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </div>
+                  </div>
+                  {r.clientSummary && (
+                    <p style={{ margin: "0 0 1rem", fontSize: "0.88rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.6, borderLeft: `3px solid ${T.accent}`, paddingLeft: "0.9rem" }}>
+                      {r.clientSummary}
+                    </p>
+                  )}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                    {r.highlights && r.highlights.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#16a34a", marginBottom: "0.4rem" }}>Highlights</div>
+                        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                          {r.highlights.slice(0, 3).map((h, i) => (
+                            <li key={i} style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.65)" }}>✓ {h}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {r.nextWeekPlan && r.nextWeekPlan.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.accent, marginBottom: "0.4rem" }}>Next Week</div>
+                        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                          {r.nextWeekPlan.slice(0, 3).map((p, i) => (
+                            <li key={i} style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.65)" }}>{i + 1}. {p}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent leads + Active creatives */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1rem" }}>

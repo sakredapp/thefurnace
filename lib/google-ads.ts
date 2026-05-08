@@ -10,7 +10,7 @@ export interface GoogleAdsMetadata {
 
 // ─── OAuth helpers ────────────────────────────────────────────────────────────
 
-async function getAccessToken(refreshToken: string): Promise<string> {
+async function getAccessToken(refreshToken: string, attempt = 0): Promise<string> {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -21,10 +21,17 @@ async function getAccessToken(refreshToken: string): Promise<string> {
       grant_type: "refresh_token",
     }),
   });
+
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Google OAuth token exchange failed: ${err}`);
+    // Only retry on server-side transient errors, not auth failures (400/401)
+    if (res.status >= 500 && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      return getAccessToken(refreshToken, attempt + 1);
+    }
+    throw new Error(`Google OAuth token exchange failed (${res.status}): ${err}`);
   }
+
   const data = await res.json();
   return data.access_token as string;
 }
@@ -101,7 +108,8 @@ export async function syncGoogleAdsCampaignMetrics(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const upsertRows = Array.from(byDate.entries()).map(([date, metrics]) => ({
+  // Account-level daily totals (existing table — dashboard uses this)
+  const dailyRows = Array.from(byDate.entries()).map(([date, metrics]) => ({
     client_id: clientId,
     date,
     platform: "google_ads" as const,
@@ -113,7 +121,34 @@ export async function syncGoogleAdsCampaignMetrics(
 
   await supabase
     .from("daily_metrics")
-    .upsert(upsertRows, { onConflict: "client_id,date,platform" });
+    .upsert(dailyRows, { onConflict: "client_id,date,platform" });
+
+  // Per-campaign breakdown (intelligence layer uses this)
+  const campaignRows: Array<{
+    client_id: string; date: string; platform: string;
+    campaign_id: string; campaign_name: string;
+    impressions: number; clicks: number; spend: number; leads_count: number;
+  }> = [];
+
+  for (const row of rows) {
+    campaignRows.push({
+      client_id: clientId,
+      date: row.segments.date,
+      platform: "google_ads",
+      campaign_id: String(row.campaign.id),
+      campaign_name: row.campaign.name,
+      impressions: row.metrics.impressions ?? 0,
+      clicks: row.metrics.clicks ?? 0,
+      spend: Math.round(((row.metrics.cost_micros ?? 0) / 1_000_000) * 100) / 100,
+      leads_count: row.metrics.conversions ?? 0,
+    });
+  }
+
+  if (campaignRows.length > 0) {
+    await supabase
+      .from("campaign_performance")
+      .upsert(campaignRows, { onConflict: "client_id,date,platform,campaign_id" });
+  }
 }
 
 // ─── Enhanced Conversions upload ──────────────────────────────────────────────

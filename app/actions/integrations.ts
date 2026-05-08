@@ -35,9 +35,15 @@ export async function saveIntegration(formData: FormData) {
   // Auto-register GHL webhook when GHL integration is first connected
   if (type === "gohighlevel" && mergedMetadata.api_key && mergedMetadata.location_id && !mergedMetadata.webhook_id) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.furnaceleads.com";
+    // Generate a per-client secret if not already set
+    if (!mergedMetadata.webhook_secret) {
+      const { randomBytes } = await import("crypto");
+      mergedMetadata.webhook_secret = randomBytes(24).toString("hex");
+    }
+    const webhookUrl = `${siteUrl}/api/crm/ghl/${clientId}?secret=${mergedMetadata.webhook_secret}`;
     const result = await registerGHLWebhook(
       mergedMetadata as unknown as GHLMetadata,
-      `${siteUrl}/api/crm/ghl`
+      webhookUrl
     );
     if (result?.webhook_id) {
       mergedMetadata = { ...mergedMetadata, webhook_id: result.webhook_id };

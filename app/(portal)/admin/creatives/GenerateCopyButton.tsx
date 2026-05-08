@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -22,9 +23,11 @@ export default function GenerateCopyButton({
 }: {
   clients: { id: string; business_name: string }[];
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [platform, setPlatform] = useState<"google_ads" | "meta_ads">("google_ads");
   const [count, setCount] = useState(3);
@@ -33,20 +36,26 @@ export default function GenerateCopyButton({
   async function handleGenerate() {
     if (!clientId) return;
     setLoading(true);
+    setError(null);
     try {
-      await fetch("/api/ai/copy", {
+      const res = await fetch("/api/ai/copy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ client_id: clientId, platform, count, performance_notes: notes || undefined }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
       setDone(true);
       setTimeout(() => {
         setOpen(false);
         setDone(false);
         setLoading(false);
-        window.location.reload();
+        router.refresh();
       }, 1200);
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   }
@@ -121,6 +130,12 @@ export default function GenerateCopyButton({
                 style={{ ...inputStyle, resize: "vertical" }}
               />
             </div>
+
+            {error && (
+              <div style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 8, padding: "0.65rem 0.9rem", color: "#f87171", fontSize: "0.83rem" }}>
+                {error}
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
               <button

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { analyzeCampaignPerformance, generateWeeklyReport } from "@/lib/ai";
+import { sendWeeklyReport } from "@/lib/email";
 
 const db = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const { data: clients } = await db()
     .from("clients")
-    .select("id, business_name, vertical, offer_description")
+    .select("id, business_name, vertical, offer_description, contact_email")
     .eq("status", "active");
 
   if (!clients?.length) {
@@ -49,12 +50,17 @@ export async function GET(req: NextRequest) {
 }
 
 async function processClientReport(
-  client: { id: string; business_name: string; vertical: string | null; offer_description: string | null },
+  client: {
+    id: string;
+    business_name: string;
+    vertical: string | null;
+    offer_description: string | null;
+    contact_email: string;
+  },
   startStr: string,
   endStr: string,
   period: string
 ) {
-  // Aggregate daily_metrics for the period
   const { data: metrics } = await db()
     .from("daily_metrics")
     .select("platform, spend, impressions, clicks, leads_count, qualified_count, booked_count, closed_count")
@@ -62,7 +68,6 @@ async function processClientReport(
     .gte("date", startStr)
     .lte("date", endStr);
 
-  // Lead status breakdown
   const { data: leads } = await db()
     .from("leads")
     .select("status")
@@ -75,7 +80,6 @@ async function processClientReport(
     leadStatusBreakdown[lead.status] = (leadStatusBreakdown[lead.status] ?? 0) + 1;
   }
 
-  // Group metrics by platform
   const byPlatform = new Map<string, {
     impressions: number; clicks: number; leads: number;
     qualifiedLeads: number; spend: number;
@@ -95,7 +99,6 @@ async function processClientReport(
 
   const campaigns = Array.from(byPlatform.entries()).map(([platform, m]) => ({ platform, ...m }));
 
-  // Totals for the weekly report
   const totals = campaigns.reduce(
     (acc, c) => ({
       spend: acc.spend + c.spend,
@@ -119,7 +122,6 @@ async function processClientReport(
       : "N/A",
   };
 
-  // Log run start
   const { data: runRecord } = await db()
     .from("ai_runs")
     .insert({
@@ -157,6 +159,18 @@ async function processClientReport(
         completed_at: new Date().toISOString(),
       })
       .eq("id", runRecord!.id);
+
+    // Send report email — fire and forget, don't fail the run if email fails
+    if (process.env.RESEND_API_KEY) {
+      await sendWeeklyReport({
+        to: client.contact_email,
+        businessName: client.business_name,
+        period,
+        metrics: metricsForReport,
+        report,
+        analysis,
+      }).catch((err) => console.error(`[weekly-report] email failed for ${client.id}:`, err));
+    }
   } catch (err) {
     await db()
       .from("ai_runs")

@@ -35,6 +35,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <a href="/admin/creatives" style={navLink}>Creatives</a>
           <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "0.5rem 0.75rem" }} />
           <a href="/admin/clients/new" style={navLink}>+ New Client</a>
+          <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "0.5rem 0.75rem" }} />
+          <a href="/admin/stack" style={navLink}>Tech Stack</a>
         </nav>
 
         <div style={{ padding: "1rem 1.25rem", borderTop: "1px solid rgba(255,255,255,0.06)" }}>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import GenerateCopyButton from "./GenerateCopyButton";
+import { publishCreative, rejectCreative } from "@/app/actions/creatives";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -138,8 +139,27 @@ export default async function CreativesPage() {
                   </div>
                 )}
 
+                {/* Publish status */}
+                {c.publish_status && c.publish_status !== "published" && (
+                  <div style={{
+                    fontSize: "0.72rem", padding: "0.4rem 0.75rem", borderRadius: 6,
+                    background: c.publish_status === "failed" ? "rgba(220,38,38,0.1)" : "rgba(245,158,11,0.1)",
+                    border: `1px solid ${c.publish_status === "failed" ? "rgba(220,38,38,0.3)" : "rgba(245,158,11,0.3)"}`,
+                    color: c.publish_status === "failed" ? "#fca5a5" : "#fcd34d",
+                    lineHeight: 1.4,
+                  }}>
+                    {c.publish_status === "publishing" ? "Publishing to platform…" : null}
+                    {c.publish_status === "failed" ? `Publish failed: ${c.publish_error ?? "unknown error"}` : null}
+                  </div>
+                )}
+                {c.platform_ad_id && (
+                  <div style={{ fontSize: "0.68rem", color: T.muted }}>
+                    Ad ID: {c.platform_ad_id}
+                  </div>
+                )}
+
                 {/* Actions */}
-                <ApproveForm creativeId={c.id} currentStatus={c.status} />
+                <CreativeActions creativeId={c.id} currentStatus={c.status} publishStatus={c.publish_status} />
               </div>
             );
           })}
@@ -149,10 +169,22 @@ export default async function CreativesPage() {
   );
 }
 
-function ApproveForm({ creativeId, currentStatus }: { creativeId: string; currentStatus: string }) {
-  if (currentStatus === "active") return null;
+function CreativeActions({
+  creativeId,
+  currentStatus,
+  publishStatus,
+}: {
+  creativeId: string;
+  currentStatus: string;
+  publishStatus?: string | null;
+}) {
+  if (currentStatus === "active" && publishStatus === "published") return null;
+
+  const publishAction = publishCreative.bind(null, creativeId);
+  const rejectAction = rejectCreative.bind(null, creativeId);
+
   return (
-    <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto" }}>
+    <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto", flexWrap: "wrap" }}>
       {currentStatus === "draft" && (
         <form action={async () => {
           "use server";
@@ -169,19 +201,25 @@ function ApproveForm({ creativeId, currentStatus }: { creativeId: string; curren
           </button>
         </form>
       )}
-      {currentStatus === "approved" && (
-        <form action={async () => {
-          "use server";
-          const { createClient: cc } = await import("@/lib/supabase/server");
-          const supabase = await cc();
-          await supabase.from("creatives").update({ status: "active" }).eq("id", creativeId);
-        }}>
+      {currentStatus === "approved" && publishStatus !== "publishing" && (
+        <form action={publishAction}>
           <button type="submit" style={{
-            background: "rgba(22,163,74,0.12)", color: "#86efac",
-            border: "1px solid rgba(22,163,74,0.3)", borderRadius: 6,
+            background: "rgba(244,81,30,0.15)", color: "#fb923c",
+            border: "1px solid rgba(244,81,30,0.4)", borderRadius: 6,
             padding: "0.35rem 0.8rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
           }}>
-            Mark Live
+            Publish to Platform
+          </button>
+        </form>
+      )}
+      {(currentStatus === "draft" || currentStatus === "approved") && (
+        <form action={rejectAction}>
+          <button type="submit" style={{
+            background: "rgba(220,38,38,0.08)", color: "#fca5a5",
+            border: "1px solid rgba(220,38,38,0.2)", borderRadius: 6,
+            padding: "0.35rem 0.8rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          }}>
+            Reject
           </button>
         </form>
       )}

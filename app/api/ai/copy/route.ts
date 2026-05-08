@@ -29,28 +29,85 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "client_id and platform required" }, { status: 400 });
   }
 
-  const { data: client } = await db()
-    .from("clients")
-    .select("business_name, vertical, offer_description, target_geography")
-    .eq("id", client_id)
-    .single();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+  const startStr = thirtyDaysAgo.toISOString().split("T")[0];
 
+  // Fetch client + context in parallel
+  const [clientRes, existingRes, metricsRes, signalsRes, campaignRes] = await Promise.all([
+    db().from("clients")
+      .select("business_name, vertical, offer_description, target_geography")
+      .eq("id", client_id)
+      .single(),
+    db().from("creatives")
+      .select("headline, body")
+      .eq("client_id", client_id)
+      .eq("platform", platform)
+      .in("status", ["approved", "active"])
+      .limit(5),
+    db().from("daily_metrics")
+      .select("spend, impressions, clicks, leads_count, booked_count")
+      .eq("client_id", client_id)
+      .eq("platform", platform)
+      .gte("date", startStr),
+    db().from("client_signals")
+      .select("signal_type, signal, confidence")
+      .eq("client_id", client_id)
+      .eq("active", true),
+    db().from("campaign_performance")
+      .select("campaign_name, spend, leads_count")
+      .eq("client_id", client_id)
+      .eq("platform", platform)
+      .gte("date", startStr),
+  ]);
+
+  const client = clientRes.data;
   if (!client) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
 
-  // Fetch existing approved copy to differentiate from
-  const { data: existingCreatives } = await db()
-    .from("creatives")
-    .select("headline, body")
-    .eq("client_id", client_id)
-    .eq("platform", platform)
-    .in("status", ["approved", "active"])
-    .limit(5);
-
-  const existingCopy = existingCreatives?.map((c) =>
+  const existingCopy = existingRes.data?.map((c) =>
     [c.headline, c.body].filter(Boolean).join(" — ")
   );
+
+  // Aggregate 30d metrics
+  const metricRows = metricsRes.data ?? [];
+  const totals = metricRows.reduce(
+    (acc, r) => ({
+      spend: acc.spend + Number(r.spend ?? 0),
+      impressions: acc.impressions + (r.impressions ?? 0),
+      clicks: acc.clicks + (r.clicks ?? 0),
+      leads: acc.leads + (r.leads_count ?? 0),
+      booked: acc.booked + (r.booked_count ?? 0),
+    }),
+    { spend: 0, impressions: 0, clicks: 0, leads: 0, booked: 0 }
+  );
+
+  // Find top/weakest campaigns by CPL
+  const campaignMap = new Map<string, { spend: number; leads: number }>();
+  for (const row of campaignRes.data ?? []) {
+    const key = row.campaign_name ?? "Unknown";
+    const e = campaignMap.get(key) ?? { spend: 0, leads: 0 };
+    campaignMap.set(key, {
+      spend: e.spend + Number(row.spend ?? 0),
+      leads: e.leads + (row.leads_count ?? 0),
+    });
+  }
+  const rankedCampaigns = Array.from(campaignMap.entries())
+    .filter(([, m]) => m.leads > 0)
+    .sort(([, a], [, b]) => a.spend / a.leads - b.spend / b.leads);
+
+  const recentMetrics = totals.spend > 0 || totals.leads > 0 ? {
+    spend: totals.spend,
+    leads: totals.leads,
+    cpl: totals.leads > 0 ? totals.spend / totals.leads : 0,
+    ctr: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0,
+    bookingRate: totals.leads > 0 ? totals.booked / totals.leads : 0,
+    topCampaign: rankedCampaigns[0]?.[0],
+    weakestCampaign: rankedCampaigns[rankedCampaigns.length - 1]?.[0],
+  } : undefined;
+
+  const activeSignals = signalsRes.data ?? [];
 
   // Log the run start
   const { data: run } = await db()
@@ -74,6 +131,8 @@ export async function POST(req: NextRequest) {
       count: count ?? 3,
       existingCopy: existingCopy ?? [],
       performanceNotes: performance_notes,
+      recentMetrics,
+      activeSignals,
     });
 
     // Generate one image per variant in parallel (non-blocking — images attach after response)

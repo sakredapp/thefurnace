@@ -100,7 +100,9 @@ export default async function IntegrationsPage({
             "Sign in to your Google Ads account at ads.google.com",
             'Click the gear icon (Settings) → "Account access and security"',
             'Click "+" to add a new user',
-            `Enter this email address: ${process.env.FURNACE_GOOGLE_ADS_EMAIL ?? "ops@yourdomain.com"}`,
+            process.env.FURNACE_GOOGLE_ADS_EMAIL
+              ? `Enter this email address: ${process.env.FURNACE_GOOGLE_ADS_EMAIL}`
+              : "Enter the Furnace account manager email (check your onboarding doc)",
             'Select "Admin" access level and click "Send invitation"',
             "Once accepted, paste your Google Ads Customer ID below (format: XXX-XXX-XXXX)",
           ]} />
@@ -113,6 +115,8 @@ export default async function IntegrationsPage({
             extraFields={[
               { name: "refresh_token", label: "OAuth Refresh Token", placeholder: "1//0g...", sensitive: true },
               { name: "conversion_action_id", label: "Conversion Action Resource Name", placeholder: "customers/123/conversionActions/456" },
+              { name: "ad_group_resource_name", label: "Ad Group Resource Name (for publishing)", placeholder: "customers/123/adGroups/456" },
+              { name: "final_url", label: "Default Landing Page URL (for publishing)", placeholder: "https://yoursite.com/landing-page" },
             ]}
           />
         </IntegrationCard>
@@ -123,7 +127,9 @@ export default async function IntegrationsPage({
           <Instructions steps={[
             "Go to business.facebook.com → Business Settings",
             'Click "Users" → "Partners" → "Add Partner"',
-            `Enter our Business ID: ${process.env.FURNACE_META_BUSINESS_ID ?? "your-business-id"}`,
+            process.env.FURNACE_META_BUSINESS_ID
+              ? `Enter our Business ID: ${process.env.FURNACE_META_BUSINESS_ID}`
+              : "Enter the Furnace Business ID (check your onboarding doc)",
             'Grant "Manage campaigns" access to your Ad Account',
             'Also grant "View performance" on your Pixel',
             "Paste your Meta Ad Account ID below (format: act_XXXXXXXXXX)",
@@ -136,6 +142,9 @@ export default async function IntegrationsPage({
             existing={connected["meta_ads"]}
             extraFields={[
               { name: "access_token", label: "Meta Long-Lived Access Token", placeholder: "EAAxxxxxx...", sensitive: true },
+              { name: "page_id", label: "Facebook Page ID (for publishing)", placeholder: "123456789" },
+              { name: "ad_set_id", label: "Ad Set ID (for publishing)", placeholder: "23843xxxxxx" },
+              { name: "final_url", label: "Default Landing Page URL (for publishing)", placeholder: "https://yoursite.com/landing-page" },
             ]}
           />
         </IntegrationCard>
@@ -149,8 +158,10 @@ export default async function IntegrationsPage({
             </div>
           ) : connected["gohighlevel"]?.status === "connected" ? (
             <div style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 10, padding: "0.9rem 1.25rem", marginBottom: "1.5rem", fontSize: "0.85rem", color: "#fcd34d" }}>
-              Auto-registration failed or not attempted. Manually add this webhook URL in GHL → Settings → Webhooks, and select "Opportunity Stage Update":<br />
-              <code style={{ fontSize: "0.78rem", color: "#fff", display: "block", marginTop: "0.4rem" }}>{leadsWebhookUrl.replace("/api/leads", "/api/crm/ghl")}</code>
+              Auto-registration failed. Manually add this webhook URL in GHL → Settings → Webhooks and select "Opportunity Stage Update":
+              <code style={{ fontSize: "0.75rem", color: "#fff", display: "block", marginTop: "0.5rem", wordBreak: "break-all" }}>
+                {`${webhookBase}/api/crm/ghl/${id}${connected["gohighlevel"]?.metadata?.webhook_secret ? `?secret=${connected["gohighlevel"].metadata.webhook_secret}` : ""}`}
+              </code>
             </div>
           ) : null}
           <Instructions steps={[

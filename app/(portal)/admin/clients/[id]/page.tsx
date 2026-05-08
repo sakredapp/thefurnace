@@ -85,16 +85,64 @@ export default async function ClientDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: client }, { data: steps }] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+  const [{ data: client }, { data: steps }, { data: metricsRows }, { data: leadRows }, { data: recentReports }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase
       .from("onboarding_steps")
       .select("*")
       .eq("client_id", id)
       .order("step_order", { ascending: true }),
+    supabase
+      .from("daily_metrics")
+      .select("platform, spend, impressions, clicks, leads_count, qualified_count, booked_count, closed_count")
+      .eq("client_id", id)
+      .gte("date", thirtyDaysAgo),
+    supabase
+      .from("leads")
+      .select("status")
+      .eq("client_id", id),
+    supabase
+      .from("ai_runs")
+      .select("id, input_summary, output, created_at")
+      .eq("client_id", id)
+      .eq("run_type", "report")
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(3),
   ]);
 
   if (!client) notFound();
+
+  // Aggregate 30-day metrics by platform
+  const platformMap = new Map<string, { spend: number; impressions: number; clicks: number; leads: number; qualified: number; booked: number; closed: number }>();
+  for (const row of metricsRows ?? []) {
+    const p = row.platform ?? "total";
+    const e = platformMap.get(p) ?? { spend: 0, impressions: 0, clicks: 0, leads: 0, qualified: 0, booked: 0, closed: 0 };
+    platformMap.set(p, {
+      spend: e.spend + Number(row.spend ?? 0),
+      impressions: e.impressions + (row.impressions ?? 0),
+      clicks: e.clicks + (row.clicks ?? 0),
+      leads: e.leads + (row.leads_count ?? 0),
+      qualified: e.qualified + (row.qualified_count ?? 0),
+      booked: e.booked + (row.booked_count ?? 0),
+      closed: e.closed + (row.closed_count ?? 0),
+    });
+  }
+  const platforms = Array.from(platformMap.entries()).filter(([p]) => p !== "total");
+  const totals30d = Array.from(platformMap.values()).reduce(
+    (acc, r) => ({ spend: acc.spend + r.spend, impressions: acc.impressions + r.impressions, clicks: acc.clicks + r.clicks, leads: acc.leads + r.leads, qualified: acc.qualified + r.qualified, booked: acc.booked + r.booked, closed: acc.closed + r.closed }),
+    { spend: 0, impressions: 0, clicks: 0, leads: 0, qualified: 0, booked: 0, closed: 0 }
+  );
+
+  const statusCount: Record<string, number> = {};
+  for (const l of leadRows ?? []) {
+    statusCount[l.status] = (statusCount[l.status] ?? 0) + 1;
+  }
+  const totalLeads = (leadRows ?? []).length;
+
+  const hasCampaignData = (metricsRows ?? []).length > 0;
 
   const completedCount = steps?.filter((s) => s.completed).length ?? 0;
   const totalCount = steps?.length ?? 0;
@@ -265,6 +313,129 @@ export default async function ClientDetailPage({
           </p>
         </div>
       )}
+
+      {/* Campaign Performance */}
+      <div style={{ marginBottom: "2.5rem" }}>
+        <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: T.accent, marginBottom: "1rem" }}>
+          Campaign Performance · Last 30 Days
+        </div>
+
+        {!hasCampaignData ? (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "1.5rem", fontSize: "0.85rem", color: T.muted, textAlign: "center" }}>
+            No ad data synced yet. Metrics appear here once Google Ads and Meta Ads are connected and the daily sync runs.
+          </div>
+        ) : (
+          <>
+            {/* KPIs */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1rem" }}>
+              {[
+                { label: "Ad Spend", value: totals30d.spend > 0 ? `$${totals30d.spend.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—" },
+                { label: "Leads", value: totals30d.leads > 0 ? totals30d.leads.toLocaleString() : "—" },
+                { label: "CPL", value: totals30d.leads > 0 ? `$${(totals30d.spend / totals30d.leads).toFixed(2)}` : "—" },
+                { label: "Booked", value: totals30d.booked > 0 ? `${totals30d.booked} (${totals30d.leads > 0 ? ((totals30d.booked / totals30d.leads) * 100).toFixed(1) : 0}%)` : "—" },
+              ].map((kpi) => (
+                <div key={kpi.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "1rem 1.25rem" }}>
+                  <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>{kpi.value}</div>
+                  <div style={{ fontSize: "0.67rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.muted, marginTop: "0.3rem" }}>{kpi.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Platform breakdown */}
+            {platforms.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(platforms.length, 2)}, 1fr)`, gap: "0.75rem", marginBottom: "1rem" }}>
+                {platforms.map(([platform, m]) => (
+                  <div key={platform} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "1rem 1.25rem" }}>
+                    <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: "0.75rem" }}>
+                      {platform === "google_ads" ? "Google Ads" : platform === "meta_ads" ? "Meta Ads" : platform}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                      {[
+                        { label: "Spend", value: `$${m.spend.toFixed(0)}` },
+                        { label: "Leads", value: m.leads },
+                        { label: "CPL", value: m.leads > 0 ? `$${(m.spend / m.leads).toFixed(0)}` : "—" },
+                        { label: "Impressions", value: m.impressions > 1000 ? `${(m.impressions / 1000).toFixed(1)}k` : m.impressions },
+                        { label: "Clicks", value: m.clicks },
+                        { label: "CTR", value: m.impressions > 0 ? `${((m.clicks / m.impressions) * 100).toFixed(2)}%` : "—" },
+                      ].map((s) => (
+                        <div key={s.label}>
+                          <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#fff" }}>{s.value}</div>
+                          <div style={{ fontSize: "0.65rem", color: T.muted }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Lead pipeline */}
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "1rem 1.25rem" }}>
+              <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: "0.75rem" }}>
+                Full Lead Pipeline · All Time ({totalLeads} total)
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {[
+                  { key: "new", label: "New", color: "#6b7280" },
+                  { key: "contacted", label: "Contacted", color: "#3b82f6" },
+                  { key: "qualified", label: "Qualified", color: "#f59e0b" },
+                  { key: "booked", label: "Booked", color: "#8b5cf6" },
+                  { key: "closed_won", label: "Won", color: "#16a34a" },
+                  { key: "closed_lost", label: "Lost", color: "#dc2626" },
+                  { key: "unqualified", label: "DQ", color: "#374151" },
+                ].map(({ key, label, color }) => {
+                  const n = statusCount[key] ?? 0;
+                  if (n === 0) return null;
+                  return (
+                    <div key={key} style={{
+                      background: `${color}18`, border: `1px solid ${color}35`,
+                      borderRadius: 8, padding: "0.5rem 0.9rem", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: "1.1rem", fontWeight: 900, color }}>{n}</div>
+                      <div style={{ fontSize: "0.65rem", fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Weekly AI reports */}
+        {(recentReports ?? []).length > 0 && (
+          <div style={{ marginTop: "1rem" }}>
+            <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: "0.75rem" }}>
+              AI Weekly Reports
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              {(recentReports ?? []).map((run) => {
+                const r = (run.output as { report?: { headline?: string; clientSummary?: string; concerns?: string[] } } | null)?.report;
+                const analysis = (run.output as { analysis?: { summary?: string; recommendations?: Array<{ priority: string; action: string }> } } | null)?.analysis;
+                if (!r) return null;
+                return (
+                  <div key={run.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "1rem 1.25rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "0.5rem" }}>
+                      <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "#fff" }}>{r.headline}</div>
+                      <div style={{ fontSize: "0.68rem", color: T.muted, flexShrink: 0 }}>
+                        {new Date(run.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </div>
+                    </div>
+                    {r.clientSummary && (
+                      <p style={{ margin: "0 0 0.5rem", fontSize: "0.82rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>{r.clientSummary}</p>
+                    )}
+                    {analysis?.recommendations?.filter(rec => rec.priority === "high").slice(0, 2).map((rec, i) => (
+                      <div key={i} style={{ fontSize: "0.78rem", color: T.accent, marginTop: "0.25rem" }}>→ {rec.action}</div>
+                    ))}
+                    {r.concerns && r.concerns.length > 0 && (
+                      <div style={{ fontSize: "0.75rem", color: "#f59e0b", marginTop: "0.35rem" }}>⚠ {r.concerns[0]}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Onboarding SOP */}
       <div>
