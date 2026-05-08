@@ -1,9 +1,13 @@
 import { Resend } from "resend";
 import type { WeeklyReport, CampaignAnalysis } from "@/lib/ai";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = "Furnace <reports@furnaceleads.com>";
+
+// Lazy-initialize so the module loads safely at build time without the key
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not set");
+  return new Resend(process.env.RESEND_API_KEY);
+};
 
 export async function sendWeeklyReport(input: {
   to: string;
@@ -106,7 +110,7 @@ export async function sendWeeklyReport(input: {
 </body>
 </html>`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `[${businessName}] Weekly Report: ${report.headline}`,
