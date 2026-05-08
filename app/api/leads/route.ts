@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   // Forward to Virtual Closer — use per-client repId stored in integration account_id
   const vcIntegration = integrations?.find((i) => i.type === "virtual_closer");
   const vcRepId = vcIntegration?.account_id;
-  const vcSecret = process.env.VC_FURNACE_SECRET;
+  const vcSecret = process.env.FURNACE_INBOUND_SECRET;
   if (vcRepId && vcSecret) {
     forwardPromises.push(
       fetch(`https://virtualcloser.com/api/webhooks/furnace/${vcRepId}`, {
