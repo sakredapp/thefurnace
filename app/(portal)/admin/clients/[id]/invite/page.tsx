@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
 import { inviteClient } from "@/app/actions/integrations";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
@@ -25,10 +25,7 @@ export default async function InviteClientPage({
 }) {
   const { id } = await params;
   const { error, invited } = await searchParams;
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const { data: client } = await supabase
     .from("clients")

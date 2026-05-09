@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -11,9 +10,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function AdminDashboard() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const { data: clients } = await supabase
     .from("clients")

@@ -1,4 +1,4 @@
-const GHL_BASE = "https://rest.gohighlevel.com/v1";
+const GHL_BASE = "https://services.leadconnectorhq.com";
 
 export interface GHLMetadata {
   location_id: string;
@@ -10,6 +10,7 @@ function headers(apiKey: string) {
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${apiKey}`,
+    Version: "2021-07-28",
   };
 }
 
@@ -58,7 +59,7 @@ export async function registerGHLWebhook(
   meta: GHLMetadata,
   webhookUrl: string
 ): Promise<{ webhook_id: string } | null> {
-  const res = await fetch(`${GHL_BASE}/hooks/`, {
+  const res = await fetch(`${GHL_BASE}/webhooks/`, {
     method: "POST",
     headers: headers(meta.api_key),
     body: JSON.stringify({
@@ -74,14 +75,14 @@ export async function registerGHLWebhook(
   }
 
   const data = await res.json();
-  return { webhook_id: data.id ?? data.hook?.id };
+  return { webhook_id: data.id ?? data.webhook?.id };
 }
 
 // ─── Delete webhook when integration is removed ───────────────────────────────
 
 export async function deleteGHLWebhook(meta: GHLMetadata): Promise<void> {
   if (!meta.webhook_id) return;
-  await fetch(`${GHL_BASE}/hooks/${meta.webhook_id}/`, {
+  await fetch(`${GHL_BASE}/webhooks/${meta.webhook_id}/`, {
     method: "DELETE",
     headers: headers(meta.api_key),
   }).catch(() => {});

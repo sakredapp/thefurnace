@@ -27,25 +27,39 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const protectedPaths = ["/admin", "/dashboard", "/onboarding"];
-  const isProtected = protectedPaths.some((p) =>
-    request.nextUrl.pathname.startsWith(p)
-  );
+  const pathname = request.nextUrl.pathname;
+  const isAdmin = pathname.startsWith("/admin");
+  const isClient = pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
+  const isProtected = isAdmin || isClient;
 
   if (!user && isProtected) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
+  if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    // Default to /admin — only explicit "client" role goes to /dashboard
-    const dest = profile?.role === "client" ? "/dashboard" : "/admin";
-    return NextResponse.redirect(new URL(dest, request.url));
+    const role = profile?.role ?? "client";
+
+    // Redirect away from login
+    if (pathname === "/login") {
+      const dest = role === "client" ? "/dashboard" : "/admin";
+      return NextResponse.redirect(new URL(dest, request.url));
+    }
+
+    // Client users must not access admin — redirect to their dashboard
+    if (isAdmin && role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Admin users who somehow land on client routes go to admin
+    if (isClient && role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
   return supabaseResponse;

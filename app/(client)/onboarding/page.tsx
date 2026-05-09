@@ -4,13 +4,16 @@ import { redirect } from "next/navigation";
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
 const STEP_DESCRIPTIONS: Record<string, string> = {
-  google_ads: "Your account manager will connect your Google Ads account to our system.",
-  meta_ads: "We'll link your Meta (Facebook/Instagram) Ads account for campaign management.",
-  crm: "Connect your CRM so leads flow in automatically and get qualified.",
-  offer: "We'll document your offer, target customer, and what makes you different.",
-  geo_budget: "Set your monthly ad budget and the geographic areas you want to target.",
-  tracking: "Install our conversion pixel so we can track leads back to revenue.",
-  launch: "Final review of your campaign plan before we go live.",
+  profile:        "We've documented your business info, offer, and target geography.",
+  client_invite:  "Your account manager will send you a login link for this portal.",
+  google_ads:     "Your account manager will connect your Google Ads account to our system.",
+  meta_ads:       "We'll link your Meta (Facebook/Instagram) Ads account for campaign management.",
+  virtual_closer: "Your AI SDR will be configured to call, qualify, and book leads automatically.",
+  crm:            "Connect your CRM so leads flow in automatically and get qualified.",
+  tracking:       "Install our conversion pixel so we can track leads back to revenue.",
+  webhook_test:   "We'll send a test lead to confirm everything is wired correctly.",
+  copy_gen:       "Your account manager will generate the first round of AI ad copy for review.",
+  launch:         "Final review of your campaign plan before we go live.",
 };
 
 export default async function ClientOnboarding() {

@@ -1,7 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
 import GenerateCopyButton from "./GenerateCopyButton";
-import { publishCreative, rejectCreative } from "@/app/actions/creatives";
+import { approveCreative, publishCreative, rejectCreative } from "@/app/actions/creatives";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -15,9 +14,7 @@ const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
 };
 
 export default async function CreativesPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const [{ data: creatives }, { data: clients }] = await Promise.all([
     supabase
@@ -186,12 +183,7 @@ function CreativeActions({
   return (
     <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto", flexWrap: "wrap" }}>
       {currentStatus === "draft" && (
-        <form action={async () => {
-          "use server";
-          const { createClient: cc } = await import("@/lib/supabase/server");
-          const supabase = await cc();
-          await supabase.from("creatives").update({ status: "approved" }).eq("id", creativeId);
-        }}>
+        <form action={approveCreative.bind(null, creativeId)}>
           <button type="submit" style={{
             background: "rgba(59,130,246,0.12)", color: "#93c5fd",
             border: "1px solid rgba(59,130,246,0.3)", borderRadius: 6,

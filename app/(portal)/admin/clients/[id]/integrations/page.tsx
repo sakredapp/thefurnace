@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
 import { saveIntegration } from "@/app/actions/integrations";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
@@ -36,10 +36,7 @@ export default async function IntegrationsPage({
 }) {
   const { id } = await params;
   const { step } = await searchParams;
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const [{ data: client }, { data: integrations }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
@@ -141,6 +138,7 @@ export default async function IntegrationsPage({
             placeholder="act_123456789"
             existing={connected["meta_ads"]}
             extraFields={[
+              { name: "pixel_id", label: "Meta Pixel ID (for CAPI conversions)", placeholder: "123456789" },
               { name: "access_token", label: "Meta Long-Lived Access Token", placeholder: "EAAxxxxxx...", sensitive: true },
               { name: "page_id", label: "Facebook Page ID (for publishing)", placeholder: "123456789" },
               { name: "ad_set_id", label: "Ad Set ID (for publishing)", placeholder: "23843xxxxxx" },

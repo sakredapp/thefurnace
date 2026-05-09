@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/app/actions/guard";
 
 const DEFAULT_STEPS = [
   { step_key: "profile",         step_label: "Complete client profile",        step_order: 1 },
@@ -17,10 +17,7 @@ const DEFAULT_STEPS = [
 ];
 
 export async function createClient_(formData: FormData) {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const { data: client, error } = await supabase
     .from("clients")
@@ -34,7 +31,6 @@ export async function createClient_(formData: FormData) {
       target_geography: formData.get("target_geography") as string,
       offer_description: formData.get("offer_description") as string,
       crm_type: formData.get("crm_type") as string,
-      created_by: user.id,
     })
     .select()
     .single();
@@ -59,7 +55,7 @@ export async function createClient_(formData: FormData) {
 }
 
 export async function markStepComplete(stepId: string, clientId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   await supabase
     .from("onboarding_steps")

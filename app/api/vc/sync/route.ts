@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 import { uploadGoogleEnhancedConversion, type GoogleAdsMetadata } from "@/lib/google-ads";
 
 const db = () => createClient(
@@ -39,7 +40,7 @@ const CONVERSION_DISPOSITIONS = new Set([
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-webhook-secret");
-  if (secret !== process.env.LEADS_WEBHOOK_SECRET) {
+  if (secret !== process.env.FURNACE_INBOUND_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -110,8 +111,19 @@ async function fireAttributionEvents(lead: Record<string, unknown>, disposition:
 }
 
 async function fireMetaConversionEvent(lead: Record<string, unknown>, disposition: string) {
-  const metaPixelId = process.env.META_PIXEL_ID;
-  const metaToken = process.env.META_CONVERSIONS_API_TOKEN;
+  const clientId = lead.client_id as string;
+
+  const { data: integration } = await db()
+    .from("integrations")
+    .select("metadata")
+    .eq("client_id", clientId)
+    .eq("type", "meta_ads")
+    .eq("status", "connected")
+    .single();
+
+  const metaMeta = integration?.metadata as Record<string, string> | null;
+  const metaPixelId = metaMeta?.pixel_id ?? process.env.META_PIXEL_ID;
+  const metaToken = metaMeta?.access_token ?? process.env.META_CONVERSIONS_API_TOKEN;
   if (!metaPixelId || !metaToken) return;
 
   const eventName =
@@ -119,7 +131,6 @@ async function fireMetaConversionEvent(lead: Record<string, unknown>, dispositio
     : ["appointment_set", "second_call_booked", "third_call_booked"].includes(disposition) ? "Schedule"
     : "Lead";
 
-  const { createHash } = await import("crypto");
   const hash = (v: string) => createHash("sha256").update(v.trim().toLowerCase()).digest("hex");
 
   await fetch(

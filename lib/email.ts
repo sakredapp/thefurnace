@@ -3,6 +3,10 @@ import type { WeeklyReport, CampaignAnalysis } from "@/lib/ai";
 
 const FROM = "Furnace <reports@furnaceleads.com>";
 
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // Lazy-initialize so the module loads safely at build time without the key
 const getResend = () => {
   if (!process.env.RESEND_API_KEY) throw new Error("RESEND_API_KEY not set");
@@ -20,17 +24,17 @@ export async function sendWeeklyReport(input: {
   const { to, businessName, period, metrics, report, analysis } = input;
 
   const highlightRows = report.highlights
-    .map((h) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">✓ ${h}</td></tr>`)
+    .map((h) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">✓ ${esc(h)}</td></tr>`)
     .join("");
 
   const concernRows = report.concerns.length > 0
     ? report.concerns
-        .map((c) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">⚠ ${c}</td></tr>`)
+        .map((c) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">⚠ ${esc(c)}</td></tr>`)
         .join("")
     : `<tr><td style="padding:6px 0;color:#6b7280;font-size:14px;">No major concerns this week.</td></tr>`;
 
   const planRows = report.nextWeekPlan
-    .map((p, i) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">${i + 1}. ${p}</td></tr>`)
+    .map((p, i) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a1a10;color:#e8d5c4;font-size:14px;">${i + 1}. ${esc(p)}</td></tr>`)
     .join("");
 
   const topRecs = analysis?.recommendations
@@ -42,8 +46,8 @@ export async function sendWeeklyReport(input: {
         <h3 style="margin:0 0 12px;font-size:13px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#F4511E;">Strategic Recommendations</h3>
         ${topRecs.map((r) => `
           <div style="background:#1a0d06;border:1px solid rgba(244,81,30,0.2);border-radius:8px;padding:14px;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">${r.action}</div>
-            <div style="font-size:12px;color:#9ca3af;">${r.rationale}</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">${esc(r.action)}</div>
+            <div style="font-size:12px;color:#9ca3af;">${esc(r.rationale)}</div>
           </div>`).join("")}
       </div>`
     : "";
@@ -51,8 +55,8 @@ export async function sendWeeklyReport(input: {
   const metricsHtml = Object.entries(metrics)
     .map(([k, v]) => `
       <td style="text-align:center;padding:0 16px;">
-        <div style="font-size:22px;font-weight:900;color:#F4511E;">${v}</div>
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-top:2px;">${k.replace(/_/g, " ")}</div>
+        <div style="font-size:22px;font-weight:900;color:#F4511E;">${esc(String(v))}</div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-top:2px;">${esc(k.replace(/_/g, " "))}</div>
       </td>`)
     .join("");
 
@@ -65,13 +69,13 @@ export async function sendWeeklyReport(input: {
     <!-- Header -->
     <div style="margin-bottom:28px;">
       <div style="font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:#F4511E;margin-bottom:6px;">The Furnace</div>
-      <h1 style="margin:0;font-size:26px;font-weight:900;color:#fff;line-height:1.2;">${report.headline}</h1>
-      <div style="margin-top:8px;font-size:13px;color:#6b7280;">${businessName} &middot; ${period}</div>
+      <h1 style="margin:0;font-size:26px;font-weight:900;color:#fff;line-height:1.2;">${esc(report.headline)}</h1>
+      <div style="margin-top:8px;font-size:13px;color:#6b7280;">${esc(businessName)} &middot; ${esc(period)}</div>
     </div>
 
     <!-- Summary -->
     <div style="background:#1a0d06;border-left:3px solid #F4511E;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:28px;">
-      <p style="margin:0;font-size:15px;line-height:1.6;color:#e8d5c4;">${report.clientSummary}</p>
+      <p style="margin:0;font-size:15px;line-height:1.6;color:#e8d5c4;">${esc(report.clientSummary)}</p>
     </div>
 
     <!-- Metrics -->

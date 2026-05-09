@@ -1,4 +1,5 @@
 import { createClient_ } from "@/app/actions/clients";
+import { requireAdmin } from "@/app/actions/guard";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -24,7 +25,8 @@ const labelStyle: React.CSSProperties = {
   marginBottom: "0.4rem",
 };
 
-export default function NewClientPage() {
+export default async function NewClientPage() {
+  await requireAdmin();
   return (
     <div style={{ padding: "2rem 2.5rem", maxWidth: 720 }}>
       <a href="/admin" style={{ fontSize: "0.82rem", color: T.muted, textDecoration: "none" }}>← Back</a>
