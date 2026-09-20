@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 import { uploadGoogleEnhancedConversion, type GoogleAdsMetadata } from "@/lib/google-ads";
 
 const db = () => createClient(
@@ -91,8 +92,19 @@ async function fireMetaConversionEvent(
   lead: Record<string, unknown>,
   status: string
 ) {
-  const metaPixelId = process.env.META_PIXEL_ID;
-  const metaAccessToken = process.env.META_CONVERSIONS_API_TOKEN;
+  const clientId = (lead.clients as { id: string } | null)?.id ?? lead.client_id as string;
+
+  const { data: integration } = await db()
+    .from("integrations")
+    .select("metadata")
+    .eq("client_id", clientId)
+    .eq("type", "meta_ads")
+    .eq("status", "connected")
+    .single();
+
+  const metaMeta = integration?.metadata as Record<string, string> | null;
+  const metaPixelId = metaMeta?.pixel_id ?? process.env.META_PIXEL_ID;
+  const metaAccessToken = metaMeta?.access_token ?? process.env.META_CONVERSIONS_API_TOKEN;
   if (!metaPixelId || !metaAccessToken) return;
 
   const eventName =
@@ -100,7 +112,6 @@ async function fireMetaConversionEvent(
     : status === "qualified" ? "Lead"
     : "Purchase";
 
-  // Meta Conversions API
   await fetch(
     `https://graph.facebook.com/v19.0/${metaPixelId}/events?access_token=${metaAccessToken}`,
     {
@@ -128,9 +139,7 @@ async function fireMetaConversionEvent(
   );
 }
 
-// Meta requires SHA-256 hashed, lowercase, trimmed PII
 function hashSHA256(value: string): string {
-  const { createHash } = require("crypto");
   return createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
 }
 

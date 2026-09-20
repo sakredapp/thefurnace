@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
 
 const T = { accent: "#F4511E", muted: "rgba(255,255,255,0.45)" };
 
@@ -24,9 +23,7 @@ const SOURCE_LABEL: Record<string, string> = {
 const COLUMNS = ["new", "contacted", "qualified", "booked", "closed_won"];
 
 export default async function AdminLeadsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const [{ data: leads }, { data: clients }] = await Promise.all([
     supabase

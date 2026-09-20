@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 import { parseFurnaceLeadId, mapGHLStageToStatus } from "@/lib/gohighlevel";
 import { uploadGoogleEnhancedConversion, type GoogleAdsMetadata } from "@/lib/google-ads";
 
@@ -112,8 +113,19 @@ async function fireGoogleEnhancedConversion(lead: Record<string, unknown>, clien
 }
 
 async function fireMetaConversionEvent(lead: Record<string, unknown>, status: string) {
-  const metaPixelId = process.env.META_PIXEL_ID;
-  const metaToken = process.env.META_CONVERSIONS_API_TOKEN;
+  const clientId = lead.client_id as string;
+
+  const { data: integration } = await db()
+    .from("integrations")
+    .select("metadata")
+    .eq("client_id", clientId)
+    .eq("type", "meta_ads")
+    .eq("status", "connected")
+    .single();
+
+  const metaMeta = integration?.metadata as Record<string, string> | null;
+  const metaPixelId = metaMeta?.pixel_id ?? process.env.META_PIXEL_ID;
+  const metaToken = metaMeta?.access_token ?? process.env.META_CONVERSIONS_API_TOKEN;
   if (!metaPixelId || !metaToken) return;
 
   const eventName =
@@ -121,7 +133,6 @@ async function fireMetaConversionEvent(lead: Record<string, unknown>, status: st
     : status === "qualified" ? "Lead"
     : "Purchase";
 
-  const { createHash } = await import("crypto");
   const hash = (v: string) => createHash("sha256").update(v.trim().toLowerCase()).digest("hex");
 
   await fetch(`https://graph.facebook.com/v19.0/${metaPixelId}/events?access_token=${metaToken}`, {

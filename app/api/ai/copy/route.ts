@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createUserClient } from "@/lib/supabase/server";
 import { generateCopyVariants } from "@/lib/ai";
 import { generateAdImage } from "@/lib/image-gen";
 import { buildAdCreative } from "@/lib/placid";
@@ -11,6 +12,19 @@ const db = () => createClient(
 );
 
 export async function POST(req: NextRequest) {
+  // Require an authenticated admin session
+  const supabase = await createUserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   let body: Record<string, unknown>;
   try {
     body = await req.json();

@@ -44,9 +44,20 @@ export async function syncMetaAdsCampaignMetrics(
   // Paginate through all results — high-volume accounts can exceed 500 rows
   const allRows: MetaInsightRow[] = [];
   let nextUrl: string | null = `https://graph.facebook.com/v19.0/${metadata.ad_account_id}/insights?${params}`;
+  let page = 0;
+  const MAX_PAGES = 50;
 
-  while (nextUrl) {
-    const res = await fetch(nextUrl);
+  while (nextUrl && page < MAX_PAGES) {
+    page++;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
+    let res: Response;
+    try {
+      res = await fetch(nextUrl, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       const err = await res.text();

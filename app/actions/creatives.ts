@@ -1,8 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createClient as serviceClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { requireAdmin } from "@/app/actions/guard";
+import { createClient as serviceClient } from "@supabase/supabase-js";
 import { publishToMeta, type MetaPublishMetadata } from "@/lib/meta-publish";
 import { publishToGoogle, type GooglePublishMetadata } from "@/lib/google-publish";
 
@@ -11,10 +11,17 @@ const db = () => serviceClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+export async function approveCreative(creativeId: string) {
+  await requireAdmin();
+
+  await db()
+    .from("creatives")
+    .update({ status: "approved" })
+    .eq("id", creativeId);
+}
+
 export async function publishCreative(creativeId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  await requireAdmin();
 
   // Fetch the creative + client info
   const { data: creative } = await db()
@@ -82,7 +89,7 @@ async function publishToMetaAds(
   const result = await publishToMeta(publishMeta, {
     headline: creative.headline as string,
     body: creative.body as string,
-    cta: creative.cta as string ?? "Learn More",
+    cta: (creative.cta as string) ?? "Learn More",
     imageUrl: creative.image_url as string | null,
   });
 
@@ -136,9 +143,7 @@ async function publishToGoogleAds(
 }
 
 export async function rejectCreative(creativeId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  await requireAdmin();
 
   await db().from("creatives")
     .update({ status: "rejected" })

@@ -1,13 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/app/actions/guard";
 import { registerGHLWebhook, type GHLMetadata } from "@/lib/gohighlevel";
 
 export async function saveIntegration(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireAdmin();
 
   const clientId = formData.get("client_id") as string;
   const type = formData.get("type") as string;
@@ -108,14 +106,12 @@ export async function saveIntegration(formData: FormData) {
 }
 
 export async function inviteClient(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  await requireAdmin();
 
   const clientId = formData.get("client_id") as string;
   const email = formData.get("email") as string;
 
-  // Use service role to send invite — server action with admin client
+  // Use service role to send invite
   const { createClient: createServiceClient } = await import("@supabase/supabase-js");
   const adminClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
