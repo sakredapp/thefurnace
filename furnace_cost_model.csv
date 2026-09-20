@@ -1,0 +1,126 @@
+FURNACE PLATFORM — OPERATING COST MODEL (excludes ad spend),,,,,
+Generated: May 2026 | All costs in USD/month | Ad spend = client media budget managed by Furnace,,,,,
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+SCENARIO OVERVIEW,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Metric,Scenario A: Launch,Scenario B: Growth,Scenario C: Scale,Scenario D: Enterprise,Scenario E: Dominant
+Active Clients,5,20,50,100,200
+Avg Ad Spend / Client / Month,$3000,$6000,$12000,$25000,$50000
+Total Ad Spend Under Management,$15000,$120000,$600000,$2500000,$10000000
+Platform Fee Charged / Client / Month (suggested),$997,$1497,$1997,$2997,$3997
+Monthly Recurring Revenue (MRR),$4985,$29940,$99850,$299700,$799400
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+ACTIVITY ASSUMPTIONS (per client per month),,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Copy gen runs (new variants generated),4 runs (1/wk),8 runs (2/wk),8 runs (2/wk),12 runs (3/wk),16 runs (4/wk)
+Images per run (variants × platforms),3 images,6 images,6 images,6 images,6 images
+Total images generated / client / month,12,48,48,72,96
+Campaign analysis runs (AI perf review),4/month,4/month,4/month,8/month,8/month
+Weekly reports generated,4/month,4/month,4/month,4/month,4/month
+Attribution events fired (leads × status changes),~40/month,~120/month,~300/month,~600/month,~1200/month
+Daily metric syncs (Google + Meta),60/month,60/month,60/month,60/month,60/month
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+ANTHROPIC / CLAUDE API COSTS,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Model rates used: Sonnet 4.6 = $3/MTok in · $15/MTok out | Haiku 4.5 = $0.80/MTok in · $4/MTok out,,,,,
+,,,,,
+Copy Generation (Sonnet — ~800 tok in / 600 tok out per run),$0.01 / run,,,, 
+ → Total copy gen runs / month,20 runs,160 runs,400 runs,1200 runs,3200 runs
+ → Claude cost (copy gen),$0.23,$1.82,$4.56,$13.68,$36.48
+,,,,,
+Campaign Analysis (Sonnet — ~2000 tok in / 800 tok out per run),$0.02 / run,,,, 
+ → Total analysis runs / month,20 runs,80 runs,200 runs,800 runs,1600 runs
+ → Claude cost (analysis),$0.36,$1.44,$3.60,$14.40,$28.80
+,,,,,
+Weekly Reports (Haiku — ~1200 tok in / 400 tok out per run),$0.003 / run,,,, 
+ → Total report runs / month,20 runs,80 runs,200 runs,400 runs,800 runs
+ → Claude cost (reports),$0.06,$0.21,$0.52,$1.04,$2.08
+,,,,,
+TOTAL CLAUDE API / MONTH,$0.65,$3.47,$8.68,$29.12,$67.36
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+FAL.AI IMAGE GENERATION (Flux Pro v1.1),,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Meta square (1:1) ≈ $0.05/image | Google landscape (16:9) ≈ $0.08/image | Blended avg ≈ $0.065/image,,,,,
+,,,,,
+Total images generated / month,60,960,2400,7200,19200
+fal.ai cost / month,$3.90,$62.40,$156.00,$468.00,$1248.00
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+PLACID CREATIVE COMPOSITING,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Placid plan used,Starter $19/mo,Growth $49/mo,Scale $99/mo,Business $199/mo,Custom ~$350/mo
+Plan image limit,500,2000,5000,10000,25000+
+Images needed / month,60,960,2400,7200,19200
+Overage images (beyond plan),$0,$0,$0,0 (need 2x Business),$0 (custom plan)
+Placid cost / month,$19.00,$49.00,$99.00,$199.00,$350.00
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+INFRASTRUCTURE,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Vercel (hosting + cron + serverless functions),Pro $20/mo,Pro $20/mo,Pro $20/mo,Team $99/mo,Team $99/mo
+Supabase (database + auth + storage),Pro $25/mo,Pro $25/mo,Pro $25/mo,Pro + compute ~$75/mo,Team $599/mo
+Domain / SSL,$2/mo,$2/mo,$2/mo,$2/mo,$2/mo
+TOTAL INFRASTRUCTURE / MONTH,$47.00,$47.00,$47.00,$176.00,$700.00
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+FREE / ZERO MARGINAL COST (included in Furnace engine),,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Google Ads API (metrics sync + Enhanced Conversions upload),$0 — Google charges nothing for API access,,,,,
+Meta Marketing API (metrics sync + CAPI attribution),$0 — Meta charges nothing for API access,,,,,
+GoHighLevel webhook delivery,$0 — GHL doesn't charge per webhook,,,,,
+Virtual Closer / RevRing lead routing,$0 marginal — handled by your VC infra,,,,,
+Lead ingestion webhook (inbound),$0 — covered by Vercel function execution,,,,,
+Real-time attribution events (per lead status change),$0 — API calls to Google/Meta are free,,,,,
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+TOTAL PLATFORM OPERATING COST SUMMARY,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Cost Category,Scenario A: Launch,Scenario B: Growth,Scenario C: Scale,Scenario D: Enterprise,Scenario E: Dominant
+Claude API,$0.65,$3.47,$8.68,$29.12,$67.36
+fal.ai (image generation),$3.90,$62.40,$156.00,$468.00,$1248.00
+Placid (compositing),$19.00,$49.00,$99.00,$199.00,$350.00
+Infrastructure,$47.00,$47.00,$47.00,$176.00,$700.00
+TOTAL MONTHLY COST,$70.55,$161.87,$310.68,$872.12,$2365.36
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+UNIT ECONOMICS & MARGINS,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Metric,Scenario A: Launch,Scenario B: Growth,Scenario C: Scale,Scenario D: Enterprise,Scenario E: Dominant
+Active Clients,5,20,50,100,200
+Total Monthly Cost,$70.55,$161.87,$310.68,$872.12,$2365.36
+Platform Cost Per Client / Month,$14.11,$8.09,$6.21,$8.72,$11.83
+Suggested Platform Fee / Client / Month,$997,$1497,$1997,$2997,$3997
+Monthly Recurring Revenue (MRR),$4985,$29940,$99850,$299700,$799400
+Platform Gross Profit (MRR minus ops cost),$4914,$29778,$99539,$298828,$797035
+Platform Gross Margin,98.6%,99.5%,99.7%,99.7%,99.7%
+Cost as % of Client Ad Spend (total),0.47%,0.13%,0.052%,0.035%,0.024%
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+COST SCALING INSIGHT,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+The dominant cost driver at scale is fal.ai image generation (~54% of total at 200 clients).,,,,,
+Placid is a fixed plan cost — renegotiate to custom pricing above 5000 images/month.,,,,,
+Claude API costs are essentially free — even at 200 clients it's only $67/month.,,,,,
+Infrastructure is near-flat — Vercel + Supabase don't meaningfully scale until 100+ clients.,,,,,
+Real-time attribution (Google EC + Meta CAPI) adds $0 marginal cost regardless of volume.,,,,,
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+OPTIONAL ADD-ONS (not yet built),,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+Service,Cost,Notes
+Resend (weekly report emails),$20/mo (50K emails),Free tier covers up to 3000 emails/mo — fine until ~500 clients
+Video ad generation (Runway / Kling),~$0.30-0.50/video,Future layer — not yet in engine
+Custom domain per client (white-label),~$12/yr per domain,Only if you white-label per client
+Twilio / SMS lead alerts,$0.0079/SMS,Optional — not in current build
+,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+BOTTOM LINE,,,,,
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━,,,,,
+"At 5 clients the entire platform costs $70/month to run. At 100 clients it's $872/month against $300K MRR.",,,,,
+"The AI engine is essentially free — fal.ai images are the only meaningful variable cost.",,,,,
+"Reduce image gen costs by only running Flux Pro on approved copy variants (not all drafts).",,,,,
+"At scale negotiate Placid custom plan + fal.ai volume pricing — both offer enterprise discounts.",,,,,
